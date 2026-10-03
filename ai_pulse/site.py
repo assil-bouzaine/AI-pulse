@@ -34,6 +34,8 @@ def _stat(story: Item) -> tuple[str, str]:
         return str(m["upvotes"]), "upvotes"
     if "trending" in m:
         return compact_number(m["likes"]), "likes"
+    if "views" in m:
+        return compact_number(m["views"]), "views"
     if "experts" in m:
         return str(len(m["experts"])), "expert" + ("s" if len(m["experts"]) > 1 else "")
     return "", ""
@@ -55,6 +57,10 @@ def _details(story: Item) -> list[str]:
         bits.append(m["task"])
     if "author" in m:
         bits.append(m["author"])
+    if "channel" in m:
+        bits.append(m["channel"])
+    if m.get("breakout", 0) >= 1.5:
+        bits.append(f"🔥 {m['breakout']:.1f}× its usual views")
     if m.get("issue"):
         bits.append(f"AINews: {shorten(m['issue'], 50)}")
     if m.get("all_experts"):
@@ -80,6 +86,7 @@ def _view(story: Item, notes: dict) -> dict:
         "stat": value,
         "stat_unit": unit,
         "is_new": story.is_new,
+        "thumbnail": story.meta.get("thumbnail"),
     }
 
 

@@ -6,7 +6,7 @@ a ❌ in the report's source-health table, so one broken source never kills
 the run. Adding a source = write one function, add one line here.
 """
 
-from . import ainews, blogs, github, hackernews, huggingface, reddit
+from . import ainews, blogs, github, hackernews, huggingface, reddit, youtube
 
 SOURCES = {
     "hackernews": hackernews.fetch,
@@ -18,4 +18,5 @@ SOURCES = {
     "hf_models": huggingface.fetch_models,
     "hf_papers": huggingface.fetch_papers,
     "blogs": blogs.fetch,
+    "youtube": youtube.fetch,
 }

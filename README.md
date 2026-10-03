@@ -23,7 +23,8 @@ and **opens the site in your browser** (about 30s with a cloud key).
  GitHub ──────┤  (threads)     │ seen log │   │ (embeddings) │   │ (1 call) │   + terminal
  HF models ───┤                └──────────┘   └──────────────┘   └──────────┘
  HF papers ───┤                                                  Gemini → Groq → Ollama
- Blogs ───────┘                                                  (automatic fallback)
+ Blogs ───────┤
+ YouTube ─────┘                                                  (automatic fallback)
                                                                   → reports/latest.html
 ```
 
@@ -95,6 +96,7 @@ All tuning (subreddits, GitHub topics, expert list, thresholds, weights) lives i
 - **Reddit:** RSS only (the API and `.json` endpoints are closed). There are no vote counts, so feed order is used as the rank.
 - **X/Twitter:** via the AINews "AI Twitter Recap" in the Latent Space feed (only the free part of each item).
 - **GitHub:** no trending API exists. Repos come from the Search API and are ranked by stars/day from SQLite history. Repos starred by 2+ of the trusted engineers this week get a boost.
+- **YouTube:** each channel's free RSS feed (no API key). Videos are ranked by *breakout ratio*: views/day compared with that channel's median, so small channels compete fairly. Fireship and Prime are filtered to AI topics. Add channels in `config.toml`.
 - **Blogs:** Eugene Yan and Chip Huyen post rarely, so on most days they won't show up. The lookback window is 21 days.
 
 ## Ideas to extend it (good learning exercises)

@@ -40,6 +40,7 @@ SOURCE_LABELS = {
     "hf_models": ("🤗", "HF Models"),
     "hf_papers": ("📄", "HF Papers"),
     "blogs": ("✍️", "Expert blogs"),
+    "youtube": ("🎥", "YouTube"),
 }
 
 

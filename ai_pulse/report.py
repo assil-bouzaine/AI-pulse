@@ -35,6 +35,7 @@ SECTIONS = [
     ("launches", "🚀", "Launches", "Tools people built and shipped (Show HN).", ("show_hn",), 4),
     ("papers", "📄", "Papers", "Top Hugging Face Daily Papers by upvotes.", ("hf_papers",), 5),
     ("community", "💬", "Community", "Hottest AI threads on HN and Reddit.", ("hackernews", "reddit"), None),
+    ("videos", "🎥", "YouTube", "Latest from AI & dev creators, ranked by how much each video beats its channel's usual views.", ("youtube",), 8),
     ("x", "🐦", "Heard on X", "Via the AINews Twitter recap.", ("ainews",), 5),
     ("posts", "✍️", "Expert Posts", "Fresh writing from respected AI engineers.", ("blogs",), 6),
     ("starred", "⭐", "Expert Stars", "Repos trusted engineers starred this week.", ("github_experts",), 6),
@@ -92,6 +93,8 @@ def _meta_line(story: Item) -> str:
         bits.append(f"❤️ {compact_number(m['likes'])} · {m['task']}")
     if "author" in m:
         bits.append(f"by **{m['author']}**")
+    if "channel" in m:
+        bits.append(f"**{m['channel']}** · 👁 {compact_number(m['views'])} views")
     if m.get("all_experts"):
         bits.append("👀 starred by " + ", ".join(f"@{e}" for e in m["all_experts"]))
     if story.published:
@@ -188,6 +191,8 @@ def render(stories: list[Item], results: list[SourceResult], digest: dict | None
                     sections.get("papers", []), notes)
     out += _section("💬 What the Community Is Debating", "Hottest AI threads on HN and Reddit.",
                     sections.get("community", []), notes)
+    out += _section("🎥 On YouTube", "Latest videos from AI & dev creators.",
+                    sections.get("videos", []), notes)
     out += _section("🐦 Heard on X", "Via the AINews Twitter recap (latest issues).",
                     sections.get("x", []), notes)
 

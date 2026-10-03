@@ -46,6 +46,8 @@ def _signals(story: Item) -> str:
         parts.append("starred by " + ", ".join(m["all_experts"]))
     if "author" in m:
         parts.append(f"by {m['author']}")
+    if "channel" in m:
+        parts.append(f"YouTube video by {m['channel']}, {compact_number(m['views'])} views")
     others = sorted(SOURCE_LABELS[s][1] for s in story.sources - {story.source})
     if others:
         parts.append("ALSO ON " + ", ".join(others))

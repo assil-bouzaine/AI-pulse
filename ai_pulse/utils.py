@@ -5,7 +5,7 @@ import math
 import re
 from datetime import datetime, timezone
 from time import struct_time
-from urllib.parse import urlsplit
+from urllib.parse import parse_qs, urlsplit
 
 
 def now() -> datetime:
@@ -55,6 +55,9 @@ def normalize_url(url: str) -> str:
         path = "/".join(path.split("/")[:3]).lower()
     if host == "news.ycombinator.com" and parts.query:
         path += "?" + parts.query   # item?id=... is the whole identity
+    if host in ("youtube.com", "m.youtube.com") and path == "/watch":
+        video = parse_qs(parts.query).get("v", [""])[0]
+        host, path = "youtu.be", "/" + video   # same key as the short youtu.be/ID links
     if host == "arxiv.org":
         path = re.sub(r"^/(abs|pdf)/", "/abs/", path).removesuffix(".pdf")
         path = re.sub(r"v\d+$", "", path)

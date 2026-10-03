@@ -41,6 +41,7 @@ github_experts = 0.7
 hf_models = 0.65
 hf_papers = 0.7
 blogs = 0.7
+youtube = 0.8
 
 [hackernews]
 hours = 48
@@ -79,4 +80,24 @@ feeds = [
   { name = "Hamel Husain", url = "https://hamel.dev/index.xml" },
   { name = "Eugene Yan", url = "https://eugeneyan.com/rss/" },
   { name = "Chip Huyen", url = "https://huyenchip.com/feed.xml" },
+]
+
+[youtube]
+days = 7          # most creators post weekly
+per_channel = 2   # newest videos per channel
+# IDs were resolved from each @handle and verified against the RSS feed (Oct 2026).
+# ai_filter = true keeps only AI-related videos from general-tech channels.
+channels = [
+  { name = "Fireship", id = "UCsBjURrPoezykLs9EqgamOA", ai_filter = true },
+  { name = "ThePrimeagen", id = "UC8ENHE5xdFSwx71u3fDH5Xw", ai_filter = true },
+  { name = "ThePrimeTime", id = "UCUyeluBRhGPCW4rPe_UvBZQ", ai_filter = true },
+  { name = "AI Explained", id = "UCNJ1Ymd5yFuUPtn21xtRbbw" },
+  { name = "Two Minute Papers", id = "UCbfYPyITQ-7l4upoX8nvctg" },
+  { name = "Matthew Berman", id = "UCawZsQWqfGSbCI5yjkdVkTA" },
+  { name = "Yannic Kilcher", id = "UCZHmQk67mSJgfCCTn7xBfew" },
+  { name = "Andrej Karpathy", id = "UCXUPKJO5MZQN11PqgIvyuvQ" },
+  { name = "Sam Witteveen", id = "UC55ODQSvARtgSyc8ThfiepQ" },
+  { name = "Latent Space", id = "UCxBcwypKK-W3GHd_RZ9FZrQ" },
+  { name = "Wes Roth", id = "UCqcbQf6yw5KzRoDDcZ_wBSw" },
+  { name = "Matt Wolfe", id = "UChpleBmo18P08aKCIgti38g" },
 ]
