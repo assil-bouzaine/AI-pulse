@@ -1,0 +1,82 @@
+# AI Pulse configuration. API keys live in .env, never here.
+
+[general]
+llm = "auto"              # auto | gemini | groq | ollama | none
+report_dir = "reports"
+db_path = "data/ai_pulse.db"
+source_timeout = 45       # seconds before a whole source is given up on
+top_n = 5                 # size of the "Top right now" section
+top_max_per_source = 2    # keeps the Top varied (otherwise Hacker News tends to fill it)
+per_section = 6           # items per section in the report
+
+[llm]
+# Model names change often. At startup the agent asks each provider which
+# models exist and uses the first one in these lists that is available.
+# (Verified on a free key, Oct 2026.) "gemini-flash-latest" is Google's alias for its current
+# stable Flash; brand-new models (3.7) were often overloaded (HTTP 503) at launch.
+gemini_models = ["gemini-flash-latest", "gemini-3.6-flash", "gemini-3.7-flash",
+                 "gemini-3-flash-preview", "gemini-2.5-flash"]
+groq_models = ["openai/gpt-oss-120b", "qwen/qwen3.8-27b", "openai/gpt-oss-20b"]
+ollama_model = "qwen3.5:4b"
+ollama_url = "http://localhost:11434"
+# How many ranked stories the LLM writes notes for (the rest show their summary).
+# Groq's free tier allows ~6-8K tokens/minute. A 4B model on a laptop CPU writes
+# ~6 tokens/s, so output length is what you wait for: keep it small locally.
+max_items = { gemini = 40, groq = 25, ollama = 8 }
+
+[ranking]
+embed_model = "nomic-embed-text"   # via Ollama; skipped gracefully if unavailable
+similarity = 0.84                  # cosine threshold for "same story" (tuned on real data)
+cross_source_bonus = 0.35          # per extra source talking about the same thing
+expert_bonus = 0.5                 # repo starred by 2+ trusted engineers this week
+
+[ranking.weights]
+# How much each source's internal "heat" (0..1) counts towards the global ranking.
+hackernews = 1.0
+show_hn = 0.75
+reddit = 0.85
+ainews = 1.0
+github = 0.8
+github_experts = 0.7
+hf_models = 0.65
+hf_papers = 0.7
+blogs = 0.7
+
+[hackernews]
+hours = 48
+min_points = 40
+show_hn_min_points = 8
+
+[reddit]
+subreddits = ["LocalLLaMA", "MachineLearning", "LocalLLM"]
+period = "day"
+limit = 40
+user_agent = "python:ai-pulse:v0.1 (personal AI news digest; reads public RSS once per run)"
+
+[ainews]
+days = 2          # how many days of issues to read
+max_topics = 8    # recap topics per issue
+
+[github]
+topics = ["llm", "ai-agents", "rag"]
+days = 7
+per_topic = 20
+min_stars = 20
+experts = ["karpathy", "simonw", "rasbt", "hamelsmu", "jxnl", "eugeneyan", "chiphuyen"]
+expert_days = 7
+
+[huggingface]
+models_limit = 15
+papers_limit = 12
+
+[blogs]
+days = 21         # experts post weekly-ish, so look back further than news
+per_blog = 3
+feeds = [
+  { name = "Simon Willison", url = "https://simonwillison.net/atom/everything/" },
+  { name = "Sebastian Raschka", url = "https://magazine.sebastianraschka.com/feed" },
+  { name = "Nathan Lambert", url = "https://www.interconnects.ai/feed" },
+  { name = "Hamel Husain", url = "https://hamel.dev/index.xml" },
+  { name = "Eugene Yan", url = "https://eugeneyan.com/rss/" },
+  { name = "Chip Huyen", url = "https://huyenchip.com/feed.xml" },
+]

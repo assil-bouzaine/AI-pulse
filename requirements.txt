@@ -1,0 +1,6 @@
+httpx>=0.27
+feedparser>=6.0
+rich>=13.0
+python-dotenv>=1.0
+numpy>=1.26
+jinja2>=3.1
