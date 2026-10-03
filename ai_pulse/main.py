@@ -128,11 +128,12 @@ def main() -> int:
 
     # 4. EDIT
     digest, writer = None, "no LLM"
+    on_page = editor.display_order(stories, cfg)   # write about what the reader will see
     with console.status("[bold]The editor is writing your briefing…"):
         try:
             digest, writer = llm.generate(
                 cfg, llm_choice, editor.SYSTEM_PROMPT,
-                build_prompt=lambda n: editor.build_prompt(stories, n),
+                build_prompt=lambda n: editor.build_prompt(on_page, n),
                 validate=editor.validate)
             console.print(f"[bold]Written by[/] {writer}")
         except llm.LLMError as exc:

@@ -15,6 +15,10 @@ website with the results (light/dark, works offline).
 The first launch sets everything up. Every launch collects, ranks, writes the briefing
 and **opens the site in your browser** (about 30s with a cloud key).
 
+**New to AI? Press 🧸 Simple** in the site's header. Every story gets an "explain it like I'm 5"
+version (an everyday analogy, no jargon), the big picture gets one too, and a **📖 Words of the
+day** card explains today's jargon in one plain sentence each.
+
 ```
  Hacker News ─┐
  Show HN ─────┤                ┌──────────┐   ┌──────────────┐   ┌──────────┐
@@ -71,7 +75,7 @@ All tuning (subreddits, GitHub topics, expert list, thresholds, weights) lives i
 | `store.py` | SQLite snapshots turn "total stars" into "stars per day", i.e. a homemade trending API. |
 | `rank.py` | Scoring, plus **embeddings for semantic de-duplication** (the same story on HN + Reddit becomes one story with a cross-source bonus). |
 | `llm.py` | Three providers behind one function. Gemini and Groq share the OpenAI-compatible format. JSON validation, with fallback on bad output. |
-| `editor.py` | Prompt design: code does the research, the LLM only edits. Short IDs (`s1`, `s2`) map notes back to stories. |
+| `editor.py` | Prompt design: code does the research, the LLM only edits. Short IDs (`s1`, `s2`) map notes back to stories. The LLM gets exactly the stories shown on the page, interleaved across sections so a capped prompt still covers every section, and writes a pro note + a 🧸 simple version for each. |
 | `report.py` | Decides which story goes in which section (shared by both outputs), plus the Markdown version. |
 | `site.py` + `templates/report.html` | The website: a Python "view model" + a Jinja2 template with autoescaping (internet titles can't inject HTML). One self-contained file, light/dark via CSS variables. |
 

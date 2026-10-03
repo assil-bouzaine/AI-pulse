@@ -19,10 +19,11 @@ gemini_models = ["gemini-flash-latest", "gemini-3.6-flash", "gemini-3.7-flash",
 groq_models = ["openai/gpt-oss-120b", "qwen/qwen3.8-27b", "openai/gpt-oss-20b"]
 ollama_model = "qwen3.5:4b"
 ollama_url = "http://localhost:11434"
-# How many ranked stories the LLM writes notes for (the rest show their summary).
+# How many on-page stories get a note + simple explanation (the rest show their summary).
+# The page shows ~57 stories, so 60 covers everything.
 # Groq's free tier allows ~6-8K tokens/minute. A 4B model on a laptop CPU writes
 # ~6 tokens/s, so output length is what you wait for: keep it small locally.
-max_items = { gemini = 40, groq = 25, ollama = 8 }
+max_items = { gemini = 60, groq = 20, ollama = 8 }
 
 [ranking]
 embed_model = "nomic-embed-text"   # via Ollama; skipped gracefully if unavailable

@@ -129,6 +129,27 @@
   .stat b { display: block; font-size: 18px; letter-spacing: -.02em; }
   .stat span { font-size: 11px; color: var(--faint); text-transform: uppercase; letter-spacing: .05em; }
 
+  /* ---------- 🧸 Simple explanations + glossary ---------- */
+  .eli5 { font-size: 14px; }
+  .eli5 summary { cursor: pointer; color: var(--accent); font-weight: 600; font-size: 13px;
+                  list-style: none; display: inline-flex; gap: 6px; user-select: none; }
+  .eli5 summary::-webkit-details-marker { display: none; }
+  .eli5 summary::after { content: "▸"; transition: transform .15s; }
+  .eli5[open] summary::after { transform: rotate(90deg); }
+  .eli5 p { margin: 8px 0 2px; padding: 10px 14px; border-radius: 10px; background: var(--accent-soft);
+            color: var(--text); line-height: 1.55; }
+  .item .eli5 { margin: 2px 0 8px; }
+  .big-picture .eli5 { margin-top: 16px; }
+  .big-picture .eli5 p { font-size: 15.5px; }
+  .simple-btn { border: 1px solid var(--border); background: var(--surface); color: var(--text);
+                border-radius: 999px; height: 36px; padding: 0 14px; cursor: pointer; font: inherit;
+                font-size: 14px; }
+  .simple-btn[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .glossary { margin-top: 16px; padding: 20px 24px; }
+  .glossary dl { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px 28px; margin: 0; }
+  .glossary dt { font-weight: 700; font-size: 14.5px; }
+  .glossary dd { margin: 2px 0 0; color: var(--muted); font-size: 14px; }
+
   /* ---------- Footer ---------- */
   footer { margin: 56px 0 40px; font-size: 13px; color: var(--faint); }
   details summary { cursor: pointer; color: var(--muted); }
@@ -146,6 +167,7 @@
     .big-picture { padding: 22px; }
     .big-picture p { font-size: 16.5px; }
     .item { padding: 14px 16px; }
+    .glossary dl { grid-template-columns: minmax(0, 1fr); }
     .item.has-thumb { grid-template-columns: 1fr auto; }
     .item.has-thumb .thumb { grid-column: 1 / -1; }
   }
@@ -157,6 +179,7 @@
     <div class="logo">⚡ AI <span>Pulse</span></div>
     <div class="date">{{ date }}</div>
     <div class="spacer"></div>
+    <button class="simple-btn" id="simple" aria-pressed="false" title="Show every simple explanation">🧸 Simple</button>
     <button class="theme-btn" id="theme" title="Toggle light/dark" aria-label="Toggle light/dark theme">◐</button>
   </div>
 </header>
@@ -168,6 +191,9 @@
       <div class="eyebrow">🔥 The big picture</div>
       {% if digest %}
         <p>{{ digest.big_picture }}</p>
+        {% if digest.big_picture_simple %}
+        <details class="eli5"><summary>🧸 In simple words</summary><p>{{ digest.big_picture_simple }}</p></details>
+        {% endif %}
         {% if digest.themes %}
         <div class="themes">{% for t in digest.themes[:5] %}<span class="chip"># {{ t }}</span>{% endfor %}</div>
         {% endif %}
@@ -197,6 +223,17 @@
     </div>
   </section>
 
+  {% if glossary %}
+  <section class="card glossary">
+    <div class="eyebrow">📖 Words of the day</div>
+    <dl>
+      {% for term, meaning in glossary %}
+      <div><dt>{{ term }}</dt><dd>{{ meaning }}</dd></div>
+      {% endfor %}
+    </dl>
+  </section>
+  {% endif %}
+
   {# ---------- Top stories ---------- #}
   <h2>🏆 Top stories right now</h2>
   <section class="top-grid">
@@ -210,6 +247,7 @@
       </div>
       <h3><a href="{{ s.url }}" target="_blank" rel="noopener">{{ s.title }}</a></h3>
       {% if s.note %}<p class="note">{{ s.note }}</p>{% endif %}
+      {% if s.simple %}<details class="eli5"><summary>🧸 Explain it simply</summary><p>{{ s.simple }}</p></details>{% endif %}
       {% if s.also_on %}<div class="also">🔗 Also on {{ s.also_on | join(', ') }}</div>{% endif %}
       <div class="foot">
         {% if s.stat %}<span><span class="metric">{{ s.stat }}</span> {{ s.stat_unit }}</span>{% endif %}
@@ -240,6 +278,7 @@
           <h4><a href="{{ s.url }}" target="_blank" rel="noopener">{{ s.title }}</a>
             {% if s.is_new %}<span class="new">&nbsp;NEW</span>{% endif %}</h4>
           {% if s.note %}<p class="note">{{ s.note }}</p>{% endif %}
+          {% if s.simple %}<details class="eli5"><summary>🧸 Explain it simply</summary><p>{{ s.simple }}</p></details>{% endif %}
           <div class="details">
             <span class="badge" style="--src: var(--{{ s.source }})">{{ s.source_label }}</span>
             {% for d in s.details %}<span>{{ d }}</span>{% endfor %}
@@ -288,6 +327,17 @@
   }));
   const fromLink = [...tabs].find(t => "#" + t.dataset.tab === location.hash);
   if (tabs.length) select(fromLink || tabs[0]);
+
+  // 🧸 Simple mode: open every "explain it simply" box at once (remembered)
+  const simpleBtn = document.getElementById("simple");
+  function setSimple(on) {
+    simpleBtn.setAttribute("aria-pressed", on ? "true" : "false");
+    document.querySelectorAll("details.eli5").forEach(d => { d.open = on; });
+    try { localStorage.setItem("ai-pulse-simple", on ? "1" : "0"); } catch (e) {}
+  }
+  simpleBtn.addEventListener("click", () => setSimple(simpleBtn.getAttribute("aria-pressed") !== "true"));
+  try { if (localStorage.getItem("ai-pulse-simple") === "1") setSimple(true); } catch (e) {}
+  if (!document.querySelector("details.eli5")) simpleBtn.hidden = true;   // no LLM, nothing to show
 
   // Theme toggle (remembered per browser; storage may be blocked, so guard it)
   const root = document.documentElement;

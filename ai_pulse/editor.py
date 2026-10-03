@@ -12,6 +12,7 @@ import re
 
 from .llm import LLMError
 from .models import SOURCE_LABELS, Item
+from .report import organize
 from .utils import compact_number, shorten
 
 SYSTEM_PROMPT = """You are the editor of "AI Pulse", a daily briefing for someone learning AI engineering.
@@ -19,16 +20,27 @@ Voice: a sharp, friendly senior AI engineer talking to a colleague over coffee. 
 specific (name the models, tools, numbers). No hype words ("revolutionary", "game-changer"),
 no filler, no emojis. Never invent facts that aren't in the stories.
 
+The reader is still learning, so for every story you ALSO write a "simple" explanation, as if
+to a curious 5-year-old: zero jargon, one everyday analogy (kitchens, LEGO, libraries, school...),
+max 2 short sentences. Rules for the simple version:
+  - Say what the thing actually IS, then why it matters. Keep the one key fact (free to download,
+    2x cheaper, runs on a laptop, beat a record...): simple is not vague.
+  - Don't call every AI "a robot": vary it (a helper, a brain made of math, a smart autocomplete...).
+  - Accurate: simplify, never distort or add claims that aren't in the story.
+
 Reply with ONLY a JSON object of this shape:
 {
   "big_picture": "3-4 sentences: the day's main storyline(s) and how they connect. Mention specific items.",
+  "big_picture_simple": "the same story of the day, explained to a 5-year-old (2-3 short sentences)",
   "themes": ["3 to 5 short lowercase tags, e.g. 'open-weight models'"],
   "notes": {"s1": "one sentence (max 25 words): what it is AND why an AI engineer should care", "...": "..."},
+  "simple": {"s1": "the 5-year-old version of story s1", "...": "..."},
+  "glossary": {"jargon term used today": "what it means, in one plain sentence (4 to 6 terms)"},
   "must_read": {"id": "the single best story for a learner today", "reason": "one sentence why"},
   "try_this": "one concrete hands-on thing to try this week based on today's stories (one sentence)"
 }
-Write a note for EVERY story id you are given. Never mention story ids (like "s3") in big_picture,
-reasons or try_this: those are read by humans."""
+Write a note AND a simple version for EVERY story id you are given. Never mention story ids
+(like "s3") in big_picture, reasons or try_this: those are read by humans."""
 
 
 def _signals(story: Item) -> str:
@@ -54,8 +66,24 @@ def _signals(story: Item) -> str:
     return "; ".join(parts)
 
 
+def display_order(stories: list[Item], cfg: dict) -> list[Item]:
+    """The stories that will actually appear on the page, most important first.
+
+    Top stories come first, then one story from each section in turn, so a
+    capped prompt (Groq, local models) still covers every section a little.
+    """
+    top, sections = organize(stories, cfg)
+    ordered = list(top)
+    queues = [list(sec.stories) for sec in sections]
+    while any(queues):
+        for queue in queues:
+            if queue:
+                ordered.append(queue.pop(0))
+    return ordered
+
+
 def build_prompt(stories: list[Item], max_items: int) -> str:
-    lines = [f"Today's top {min(max_items, len(stories))} stories, best first:\n"]
+    lines = [f"The {min(max_items, len(stories))} stories on today's page, most important first:\n"]
     for story in stories[:max_items]:
         source = SOURCE_LABELS[story.source][1]
         summary = shorten(story.summary, 220)
@@ -72,9 +100,14 @@ def validate(data: dict) -> None:
     if not isinstance(data.get("notes"), dict) or len(data["notes"]) < 3:
         raise LLMError("missing notes")
     # Belt and braces: strip any "(s3)" / "(s7, s18)" ids that slipped into the prose.
-    for key in ("big_picture", "try_this"):
+    for key in ("big_picture", "big_picture_simple", "try_this"):
         if isinstance(data.get(key), str):
             data[key] = re.sub(r"\s*\((?:s\d+[,\s]*)+\)", "", data[key])
+    # The learner extras are nice-to-have: if missing, they just don't show.
+    for key in ("simple", "glossary"):
+        if not isinstance(data.get(key), dict):
+            data[key] = {}
+    data.setdefault("big_picture_simple", "")
     data.setdefault("themes", [])
     data.setdefault("try_this", "")
     if not isinstance(data.get("must_read"), dict):

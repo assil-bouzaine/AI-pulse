@@ -111,32 +111,38 @@ def _note(story: Item, notes: dict) -> str:
     return notes.get(story.id) or shorten(story.summary, 180)
 
 
-def _card(story: Item, notes: dict, heading: str = "") -> list[str]:
+def _card(story: Item, notes: dict, heading: str = "", simple: dict | None = None) -> list[str]:
     """A story as a big card (with `heading`, used for the Top N) or a list entry.
 
-    A trailing backslash is a Markdown hard line break.
+    `simple` holds the 5-year-old explanations (🧸). A trailing backslash is a
+    Markdown hard line break.
     """
     link = f"[{_md(story.title)}]({story.url})"
     note = _md(_note(story, notes))
+    eli5 = _md((simple or {}).get(story.id, ""))
     if heading:
         lines = [f"{heading}{link}", _meta_line(story)]
-        return lines + (["", f"> {note}"] if note else [])
-    lines = [f"- **{link}** \\", f"  {_meta_line(story)}" + (" \\" if note else "")]
-    return lines + ([f"  _{note}_"] if note else [])
+        lines += ["", f"> {note}"] if note else []
+        return lines + ([">", f"> 🧸 _{eli5}_"] if eli5 else [])
+    lines = [f"- **{link}** \\", f"  {_meta_line(story)}" + (" \\" if note or eli5 else "")]
+    lines += [f"  _{note}_" + (" \\" if eli5 else "")] if note else []
+    return lines + ([f"  🧸 {eli5}"] if eli5 else [])
 
 
-def _section(title: str, intro: str, stories: list[Item], notes: dict) -> list[str]:
+def _section(title: str, intro: str, stories: list[Item], notes: dict,
+             simple: dict) -> list[str]:
     if not stories:
         return []
     out = ["", f"## {title}", f"_{intro}_", ""]
     for story in stories:
-        out += _card(story, notes)
+        out += _card(story, notes, simple=simple)
     return out
 
 
 def render(stories: list[Item], results: list[SourceResult], digest: dict | None,
            writer: str, cfg: dict, elapsed: float) -> str:
     notes = (digest or {}).get("notes", {})
+    simple = (digest or {}).get("simple", {})
     by_id = {s.id: s for s in stories}
     top, section_list = organize(stories, cfg)
     sections = {sec.key: sec.stories for sec in section_list}
@@ -153,8 +159,13 @@ def render(stories: list[Item], results: list[SourceResult], digest: dict | None
     # --- The editor's take ---
     if digest:
         out += ["", "## 🔥 The Big Picture", "", digest["big_picture"]]
+        if digest.get("big_picture_simple"):
+            out += ["", f"> 🧸 **In simple words:** {digest['big_picture_simple']}"]
         if digest.get("themes"):
             out += ["", "**Today's themes:** " + " · ".join(f"`{t}`" for t in digest["themes"][:5])]
+        if digest.get("glossary"):
+            out += ["", "**📖 Words of the day**", ""]
+            out += [f"- **{term}**: {meaning}" for term, meaning in list(digest["glossary"].items())[:6]]
     else:
         out += ["", "> ⚠️ No LLM was available, so this is the raw ranking without commentary. "
                     "Add a key to `.env` or start Ollama for the full briefing."]
@@ -162,7 +173,7 @@ def render(stories: list[Item], results: list[SourceResult], digest: dict | None
     # --- Top N, as big cards ---
     out += ["", f"## 🏆 Top {len(top)} Right Now", ""]
     for rank, story in enumerate(top, start=1):
-        out += _card(story, notes, heading=f"### {rank}. ")
+        out += _card(story, notes, heading=f"### {rank}. ", simple=simple)
         out.append("")
 
     # --- Browse by type ---
@@ -186,15 +197,15 @@ def render(stories: list[Item], results: list[SourceResult], digest: dict | None
                        f"{_md(shorten(_note(s, notes), 90))} |")
 
     out += _section("🚀 Fresh Launches (Show HN)", "Tools people built and shipped this week.",
-                    sections.get("launches", []), notes)
+                    sections.get("launches", []), notes, simple)
     out += _section("📄 Papers Worth Your Time", "Top of Hugging Face Daily Papers by upvotes.",
-                    sections.get("papers", []), notes)
+                    sections.get("papers", []), notes, simple)
     out += _section("💬 What the Community Is Debating", "Hottest AI threads on HN and Reddit.",
-                    sections.get("community", []), notes)
+                    sections.get("community", []), notes, simple)
     out += _section("🎥 On YouTube", "Latest videos from AI & dev creators.",
-                    sections.get("videos", []), notes)
+                    sections.get("videos", []), notes, simple)
     out += _section("🐦 Heard on X", "Via the AINews Twitter recap (latest issues).",
-                    sections.get("x", []), notes)
+                    sections.get("x", []), notes, simple)
 
     # --- Expert corner: what respected engineers write and star ---
     blog_posts = sections.get("posts", [])
@@ -204,7 +215,7 @@ def render(stories: list[Item], results: list[SourceResult], digest: dict | None
         if blog_posts:
             out += ["", "**✍️ Fresh posts**", ""]
             for s in blog_posts:
-                out += _card(s, notes)
+                out += _card(s, notes, simple=simple)
         if expert_repos:
             out += ["", "**⭐ Starred this week**", ""]
             for s in expert_repos:

@@ -70,13 +70,14 @@ def _details(story: Item) -> list[str]:
     return bits
 
 
-def _view(story: Item, notes: dict) -> dict:
+def _view(story: Item, notes: dict, simple: dict) -> dict:
     value, unit = _stat(story)
     return {
         "id": story.id,
         "title": story.title,
         "url": story.url,
         "note": notes.get(story.id) or shorten(story.summary, 200),
+        "simple": simple.get(story.id, ""),   # the 🧸 explain-like-I'm-5 version
         "source": story.source,
         "source_label": SOURCE_LABELS[story.source][1],
         "emoji": SOURCE_LABELS[story.source][0],
@@ -93,6 +94,7 @@ def _view(story: Item, notes: dict) -> dict:
 def render(stories: list[Item], results: list[SourceResult], digest: dict | None,
            writer: str, cfg: dict, elapsed: float) -> str:
     notes = (digest or {}).get("notes", {})
+    simple = (digest or {}).get("simple", {})
     top, sections = organize(stories, cfg)
     by_id = {s.id: s for s in stories}
     must = (digest or {}).get("must_read", {})
@@ -108,11 +110,12 @@ def render(stories: list[Item], results: list[SourceResult], digest: dict | None
         story_count=len(stories),
         sources_ok=sum(1 for r in results if not r.error),
         sources_total=len(results),
-        top=[_view(s, notes) for s in top],
+        top=[_view(s, notes, simple) for s in top],
         sections=[{"key": sec.key, "emoji": sec.emoji, "title": sec.title, "intro": sec.intro,
-                   "stories": [_view(s, notes) for s in sec.stories]} for sec in sections],
-        must_read=_view(must_story, notes) | {"reason": must.get("reason", "")} if must_story else None,
+                   "stories": [_view(s, notes, simple) for s in sec.stories]} for sec in sections],
+        must_read=_view(must_story, notes, simple) | {"reason": must.get("reason", "")} if must_story else None,
         try_this=(digest or {}).get("try_this", ""),
+        glossary=list((digest or {}).get("glossary", {}).items())[:6],
         health=[{"label": f"{SOURCE_LABELS[r.name][0]} {SOURCE_LABELS[r.name][1]}",
                  "count": len(r.items), "seconds": f"{r.seconds:.1f}",
                  "error": shorten(r.error, 120)} for r in results],
